@@ -1,0 +1,303 @@
+﻿@page "/savedcars"
+@rendermode InteractiveServer
+@using Car.Models
+@using Car.Services
+@inject CarService CarService
+
+<style>
+    .info-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        background-color: #6c757d;
+        color: white;
+        border-radius: 50%;
+        font-size: 11px;
+        font-weight: bold;
+        cursor: help;
+        margin-left: 8px;
+        position: relative;
+        vertical-align: middle;
+    }
+
+    .info-icon:hover::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 140%;
+        left: 0;
+        background-color: #212529;
+        color: #fff;
+        padding: 10px;
+        border-radius: 6px;
+        white-space: nowrap;
+        font-size: 12px;
+        z-index: 9999;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        font-weight: normal;
+        border: 1px solid #495057;
+    }
+
+    .info-icon:hover::before {
+        content: "";
+        position: absolute;
+        bottom: 110%;
+        left: 5px;
+        border-width: 8px 8px 0 8px;
+        border-style: solid;
+        border-color: #212529 transparent transparent transparent;
+        z-index: 9999;
+    }
+</style>
+
+<PageTitle>Записани автомобили - Car Tax PRO</PageTitle>
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-5 fw-bold">Записани автомобили</h1>
+        @if (cars.Count > 0)
+        {
+            <button class="btn btn-outline-danger shadow-sm" @onclick="ClearHistory">
+                Изчисти историята
+            </button>
+        }
+    </div>
+
+    @if (cars.Count == 0)
+    {
+        <div class="card shadow-sm border-0 bg-light text-center p-5">
+            <div class="card-body">
+                <h3 class="text-muted">Историята е празна</h3>
+                <p>Изчислените данъци ще се появят тук, след като ги запишете.</p>
+                <a href="/calculator" class="btn btn-primary mt-3 px-4">Към калкулатора</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive shadow rounded border">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-4">#</th>
+                        <th>Модел</th>
+                        <th>Дата (Възраст)</th>
+                        <th>Мощност (kW / к.с.)</th>
+                        <th>Еко Стандарт</th>
+                        <th>Изчислен данък (€ / лв.)</th>
+                        <th class="text-center">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int i = 1;
+                    }
+                    @foreach (var item in cars)
+                    {
+                        <tr>
+                            <td class="ps-4 text-muted">@i</td>
+                            <td class="fw-bold">
+                                @item.Model
+                                <span class="info-icon" data-tooltip="Коеф. Възраст: @GetAgeCoef(item.RegistrationDate).ToString("F1") | Коеф. Еко: @GetEcoCoefValue(item.EcoCategory) | База Мощност: @GetPowerBasePrice(item.PowerKW).ToString("F2") лв.">i</span>
+                            </td>
+                            <td>
+                                @item.RegistrationDate.ToString("dd/MM/yyyy") г.
+                                <span class="text-muted small">(@CalculateAge(item.RegistrationDate) годишна)</span>
+                            </td>
+                            <td>
+                                @item.PowerKW.ToString("F1") kW
+                                <span class="text-muted small">(@((item.PowerKW * 1.341).ToString("F0")) к.с.)</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info text-dark">
+                                    @FormatEcoCategory(item.EcoCategory)
+                                </span>
+                            </td>
+                            <td class="text-primary fw-bold">
+                                @item.Tax.ToString("F2") €
+                                <span class="text-muted small">(@((item.Tax * 1.95583).ToString("F2")) лв.)</span>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-danger" @onclick="() => DeleteVehicle(item)">
+                                    Изтрий
+                                </button>
+                            </td>
+                        </tr>
+                        i++;
+                    }
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <td colspan="5" class="text-end fw-bold">Обща натрупана сума:</td>
+                        <td class="text-primary fw-bold">
+                            @TotalTax.ToString("F2") €
+                            <br />
+                            <span class="text-muted small">(@((TotalTax * 1.95583).ToString("F2")) лв.)</span>
+                        </td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="mt-4 d-flex justify-content-between">
+            <p class="text-muted">Общо записи: <strong>@cars.Count</strong></p>
+            <p class="text-muted">Последна актуализация: <strong>@DateTime.Now.ToString("HH:mm:ss")</strong></p>
+        </div>
+    }
+</div>
+
+@code {
+    private List<global::Car.Models.Car> cars = new List<global::Car.Models.Car>();
+
+    private double TotalTax
+    {
+        get
+        {
+            double sum = 0;
+            foreach (var c in cars)
+            {
+                sum = sum + Math.Round(c.Tax, 2);
+            }
+            return sum;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        RefreshData();
+    }
+
+    private void RefreshData()
+    {
+        cars = CarService.GetCars();
+    }
+
+    private void DeleteVehicle(global::Car.Models.Car car)
+    {
+        CarService.DeleteCar(car);
+        RefreshData();
+    }
+
+    private void ClearHistory()
+    {
+        CarService.ClearAll();
+        RefreshData();
+    }
+
+    private int CalculateAge(DateTime regDate)
+    {
+        return DateTime.Today.Year - regDate.Year;
+    }
+
+    private double GetAgeCoef(DateTime regDate)
+    {
+        int age = CalculateAge(regDate);
+
+        if (age <= 5)
+        {
+            return 2.3;
+        }
+        else if (age <= 10)
+        {
+            return 1.5;
+        }
+        else if (age <= 15)
+        {
+            return 1.3;
+        }
+        else if (age <= 20)
+        {
+            return 1.0;
+        }
+        else
+        {
+            return 1.1;
+        }
+    }
+
+    private string GetEcoCoefValue(string label)
+    {
+        if (label == "Euro 6 / EEV")
+        {
+            return "0.40";
+        }
+        else if (label == "Euro 5")
+        {
+            return "0.60";
+        }
+        else if (label == "Euro 4")
+        {
+            return "0.80";
+        }
+        else if (label == "Euro 3")
+        {
+            return "1.00";
+        }
+        else if (label == "Electric")
+        {
+            return "0.00";
+        }
+        else
+        {
+            return "1.10";
+        }
+    }
+
+    private double GetPowerBasePrice(double kw)
+    {
+        if (kw <= 55)
+        {
+            return 0.95;
+        }
+        else if (kw <= 74)
+        {
+            return 1.28;
+        }
+        else if (kw <= 110)
+        {
+            return 1.57;
+        }
+        else if (kw <= 150)
+        {
+            return 1.76;
+        }
+        else if (kw <= 245)
+        {
+            return 1.90;
+        }
+        else
+        {
+            return 2.10;
+        }
+    }
+
+    private string FormatEcoCategory(string value)
+    {
+        if (value == "0.40" || value == "Euro 6 / EEV")
+        {
+            return "Euro 6 / EEV";
+        }
+        else if (value == "0.60" || value == "Euro 5")
+        {
+            return "Euro 5";
+        }
+        else if (value == "0.80" || value == "Euro 4")
+        {
+            return "Euro 4";
+        }
+        else if (value == "1.00" || value == "Euro 3")
+        {
+            return "Euro 3";
+        }
+        else if (value == "0.00" || value == "Electric")
+        {
+            return "Electric";
+        }
+        else
+        {
+            return "Euro 1-2 / No Cat";
+        }
+    }
+}

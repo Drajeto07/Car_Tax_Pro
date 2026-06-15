@@ -1,0 +1,87 @@
+﻿@page "/"
+@using Car.Services
+@inject CarService CarService
+
+<PageTitle>Начало - Car Tax PRO</PageTitle>
+
+<div class="container mt-5">
+    <div class="p-5 mb-4 bg-light rounded-3 shadow-sm border border-primary" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+        <div class="container-fluid py-5 text-center">
+            <h1 class="display-4 fw-bold text-primary">Car Tax PRO</h1>
+            <p class="fs-4 text-dark">Професионалният инструмент за изчисляване на данъци и статистика на автомобили.</p>
+
+            <div class="my-4">
+                <img src="icon-calc.png" alt="Калкулатор" style="max-width: 600px; width: 100%;" />
+            </div>
+
+            <hr class="my-4" style="width: 50%; margin: auto;">
+            <div class="d-flex justify-content-center gap-3">
+                <a href="/calculator" class="btn btn-primary btn-lg px-4 shadow">Стартирай калкулатора</a>
+                <a href="/statistics" class="btn btn-outline-secondary btn-lg px-4">Виж отчетите</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <img src="icon-stats.png" alt="Статистика" style="height: 200px;" />
+                    </div>
+                    <h5 class="card-title fw-bold text-primary">Жива статистика</h5>
+                    <p class="card-text text-muted">Следете общите приходи от данъци и средните разходи за всички записани автомобили.</p>
+                    <div class="badge bg-primary rounded-pill">@carsCount записани МПС</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <img src="icon-calcu.png" alt="Изчисления" style="height: 200px;" />
+                    </div>
+                    <h5 class="card-title fw-bold text-primary">Точно пресмятане</h5>
+                    <p class="card-text text-muted">Алгоритъм, съобразен със специфичните наредби на <strong>Община Варна</strong> и актуалния курс на Еврото.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <img src="icon-history.png" alt="История" style="height: 200px;" />
+                    </div>
+                    <h5 class="card-title fw-bold text-primary">История и база данни</h5>
+                    <p class="card-text text-muted">Всички изчисления се съхраняват в <strong>SQLite база данни</strong> за постоянен достъп и сигурност на информацията.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-5 pt-4 text-muted text-center border-top">
+        <p>&copy; 2026 Car Tax PRO - Учебен проект</p>
+    </footer>
+</div>
+
+@code {
+    private int carsCount = 0;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            var list = CarService.GetCars();
+            if (list != null)
+            {
+                carsCount = list.Count;
+            }
+        }
+        catch
+        {
+            carsCount = 0;
+        }
+    }
+}

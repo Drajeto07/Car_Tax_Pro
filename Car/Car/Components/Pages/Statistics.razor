@@ -1,0 +1,137 @@
+﻿@page "/statistics"
+@rendermode InteractiveServer
+@using Car.Models
+@using Car.Services
+@using System.Globalization
+@inject CarService CarService
+
+<PageTitle>Статистика - Car Tax PRO</PageTitle>
+
+<div class="container mt-5">
+    <h1 class="mb-4">Статистика на автомобилния парк (Варна)</h1>
+
+    @if (cars == null || cars.Count == 0)
+    {
+        <div class="alert alert-info shadow-sm">
+            <h5>Няма налични данни.</h5>
+            <p>Моля, първо изчислете и запишете данъци на автомобили, за да видите статистиката.</p>
+            <a href="/calculator" class="btn btn-primary btn-sm">Към калкулатора</a>
+        </div>
+    }
+    else
+    {
+        <div class="row mt-4">
+            <div class="col-md-3 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body text-center">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Общо МПС</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@cars.Count</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body text-center">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Общо данъци</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            @totalTax.ToString("F2") €
+                            <div class="small text-muted">(@((totalTax * 1.95583).ToString("F2")) лв.)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-4">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body text-center">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Среден данък</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            @averageTax.ToString("F2") €
+                            <div class="small text-muted">(@((averageTax * 1.95583).ToString("F2")) лв.)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body text-center">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Макс. данък</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            @maxTax.ToString("F2") €
+                            <div class="small text-muted">(@((maxTax * 1.95583).ToString("F2")) лв.)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mt-4 p-4 text-center">
+            <h5 class="text-start">Прогрес към целта (Евро)</h5>
+            <p class="text-muted small text-start">Сравнение на събраните данъци спрямо цел от 5000 €.</p>
+            <div class="progress" style="height: 30px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                     role="progressbar"
+                     style="width: @progress.ToString("0.0", CultureInfo.InvariantCulture)%"
+                     aria-valuenow="@totalTax"
+                     aria-valuemin="0"
+                     aria-valuemax="5000">
+                    @progress.ToString("F1")%
+                </div>
+            </div>
+            <div class="mt-2 text-muted">Курс: 1.95583 BGN = 1 EUR</div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<global::Car.Models.Car> cars = new List<global::Car.Models.Car>();
+    private double totalTax;
+    private double averageTax;
+    private double maxTax;
+    private double progress;
+
+    protected override void OnInitialized()
+    {
+        CalculateStatistics();
+    }
+
+    private void CalculateStatistics()
+    {
+        var loadedCars = CarService.GetCars();
+
+        if (loadedCars != null)
+        {
+            cars = loadedCars;
+        }
+
+        if (cars.Count > 0)
+        {
+            totalTax = 0;
+            maxTax = 0;
+
+            foreach (var car in cars)
+            {
+                double roundedTax = Math.Round((double)car.Tax, 2);
+
+                totalTax = totalTax + roundedTax;
+
+                if (roundedTax > maxTax)
+                {
+                    maxTax = roundedTax;
+                }
+            }
+
+            averageTax = totalTax / cars.Count;
+
+            double goalEUR = 5000;
+            progress = (totalTax / goalEUR) * 100;
+
+            if (progress > 100)
+            {
+                progress = 100;
+            }
+        }
+    }
+}
