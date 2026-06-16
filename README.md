@@ -25,29 +25,32 @@
 * CSS3
 * JavaScript
 
-## Структура на проекта
+## ## Структура на проекта
 
 ```text
 Car_Tax_Pro/
 │
-├── Controllers/
-├── Data/
-├── Models/
-├── Views/
-├── wwwroot/
-│   ├── css/
-│   ├── js/
-│   └── images/
+├── Car/
+│   ├── Car/
+│   │   ├── Components/
+│   │   │   ├── Layout/
+│   │   │   ├── Models/
+│   │   │   ├── Pages/
+│   │   │   └── Services/
+│   │   │
+│   │   ├── wwwroot/
+│   │   ├── appsettings.json
+│   │   ├── auto.db
+│   │   ├── Program.cs
+│   │   └── Car.csproj
+│   │
+│   ├── Car Tax Pro Documentation.pdf
+│   ├── Car Tax Pro Presentation.pdf
+│   └── Car Tax Pro Presentation Link.txt
 │
-├── Documentation/
-│   ├── Documentation.pdf
-│   ├── Presentation.pdf
-│   └── Presentation_Link.txt
-│
-├── Program.cs
-├── appsettings.json
 └── README.md
 ```
+
 
 ## Стартиране
 
@@ -58,7 +61,7 @@ Car_Tax_Pro/
 
 ## Документация
 
-Подробна документация и презентация са налични в папка `Documentation`.
+Подробна документация и презентация са налични.
 
 ## Автор
 
